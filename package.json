@@ -1,6 +1,6 @@
 {
   "name": "trivy-scan",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Run Aqua Security's Trivy scanner via npx on Linux, macOS and Windows. Downloads the official binary on first use, verifies its SHA-256 checksum, caches it locally and forwards all arguments 1:1 - no Docker, no manual install.",
   "type": "module",
   "license": "MIT",
