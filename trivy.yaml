@@ -1,0 +1,40 @@
+# Trivy configuration for the trivy-scan repository build gate.
+# Trivy auto-discovers this file in the working directory; it can also be
+# selected explicitly with `trivy-scan fs . --config trivy.yaml`.
+# Reference: https://trivy.dev/latest/docs/references/configuration/config-file/
+
+# Fail the build (non-zero exit) when any finding matches the severity filter.
+exit-code: 1
+
+# Only HIGH and CRITICAL findings break the gate; lower severities are reported
+# but do not fail the build.
+severity:
+  - HIGH
+  - CRITICAL
+
+scan:
+  # Filesystem scans cover vulnerabilities, leaked secrets and IaC
+  # misconfigurations in a single pass.
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+
+  # Generated / vendored / cache directories are not maintained source and
+  # would only produce noise.
+  skip-dirs:
+    - node_modules
+    - dist
+    - .wireit
+    - .git
+
+  # Keep DB version checks quiet in CI logs.
+  skip-version-check: false
+
+db:
+  # Reuse a cached vulnerability DB when present; refresh only when stale.
+  skip-update: false
+  no-progress: false
+
+# Human-readable table output; override with `--format json` for pipelines.
+format: table

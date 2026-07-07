@@ -156,6 +156,28 @@ npm run update-pinned  # maintainers: re-pin to the latest (or given) release,
 
 The codebase is strict-mode TypeScript with a class-per-file OOP design: value objects (`TrivyVersion`, `PlatformTarget`, `Sha256Digest`), interfaces with constructor-injected implementations (`HttpClient`, `ChecksumProvider`, `ArchiveExtractor`, `VersionResolver`), a `TrivyInstaller` orchestrator, a `TrivyRunner` process host and a `CliApplication` composition root. Runtime dependencies are just `tar` and `unzipper`; everything else uses Node's native `https`, `crypto`, `fs/promises` and `child_process`.
 
+### Build blocking gates
+
+`npm run build` is orchestrated by [wireit](https://github.com/google/wireit) and is gated by two checks that **must pass before compilation is allowed to run**:
+
+| Gate | Tool | What it enforces |
+| ---- | ---- | ---------------- |
+| `knip` | [webpro-nl/knip](https://github.com/webpro-nl/knip) | No unused dependencies, exports or files |
+| `trivy-scan` | this very package (`@b2bc-devkit/trivy-scan`) | No `HIGH`/`CRITICAL` vulnerabilities, secrets or IaC misconfigurations in the repo (`fs . --config trivy.yaml`) |
+
+If either gate fails, the build aborts — so `npm test`, `npm run prepare` and `npm publish` (via `prepublishOnly`) all inherit the gate. The trivy-scan gate dogfoods the published package: it is declared as a devDependency and invoked through its `node_modules/.bin` shim (this is more reliable than `npx` on Windows, where `npx` fails to resolve scoped-package bins). It defaults to `TRIVY_SCAN_VERSION=pinned` for deterministic, offline-safe scans; override with the environment variable to scan against a different release.
+
+The scan is configured via [`trivy.yaml`](./trivy.yaml) at the repo root, which Trivy auto-discovers. It pins the gate behavior: `exit-code: 1`, `severity: [HIGH, CRITICAL]`, `scanners: [vuln, secret, misconfig]`, and skips `node_modules`, `dist`, `.wireit` and `.git`. Edit that file to tune the gate (e.g. add a `.trivyignore` for accepted findings, change severities, or drop a scanner) — wireit includes it in the gate's input fingerprint, so changes to it correctly invalidate the cache.
+
+The gates can be run on their own:
+
+```bash
+npm run knip          # unused-dependency / dead-code gate
+npm run trivy-scan    # vulnerability gate (scans the repo with the published wrapper)
+```
+
+Wireit fingerprints each gate's input files and caches results in `.wireit/` (git-ignored), so unchanged gates are skipped on subsequent builds.
+
 ## License
 
 [MIT](./LICENSE) — note that Trivy itself is licensed under Apache-2.0 by Aqua Security; this package merely downloads and runs the unmodified official binaries.

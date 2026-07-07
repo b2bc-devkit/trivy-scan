@@ -8,6 +8,9 @@ dist/
 test/.download-cache/
 *.tgz
 
+# Wireit cache and state
+.wireit/
+
 # Logs and OS noise
 npm-debug.log*
 .DS_Store

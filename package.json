@@ -16,13 +16,66 @@
     "dist/src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "wireit",
+    "knip": "wireit",
+    "trivy-scan": "wireit",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
     "test": "npm run build && node --test \"dist/test/unit/**/*.test.js\"",
     "test:integration": "npm run build && node --test --test-timeout=600000 \"dist/test/integration/**/*.test.js\"",
     "update-pinned": "npm run build && node dist/scripts/update-pinned.js"
+  },
+  "wireit": {
+    "build": {
+      "command": "tsc -p tsconfig.json",
+      "dependencies": [
+        "knip",
+        "trivy-scan"
+      ],
+      "files": [
+        "src",
+        "scripts",
+        "test",
+        "tsconfig.json"
+      ],
+      "output": [
+        "dist"
+      ]
+    },
+    "knip": {
+      "command": "knip",
+      "files": [
+        "src",
+        "scripts",
+        "test",
+        "tsconfig.json",
+        "knip.json",
+        "package.json",
+        "package-lock.json"
+      ]
+    },
+    "trivy-scan": {
+      "command": "trivy-scan fs . --config trivy.yaml",
+      "files": [
+        "src",
+        "scripts",
+        "test",
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "knip.json",
+        "trivy.yaml",
+        "README.md",
+        "LICENSE"
+      ],
+      "env": {
+        "TRIVY_SCAN_VERSION": {
+          "external": true,
+          "default": "pinned"
+        }
+      }
+    }
   },
   "repository": {
     "type": "git",
@@ -54,8 +107,11 @@
     "unzipper": "^0.12.5"
   },
   "devDependencies": {
+    "@b2bc-devkit/trivy-scan": "^1.0.2",
     "@types/node": "^24.0.0",
     "@types/unzipper": "^0.10.11",
-    "typescript": "^6.0.3"
+    "knip": "^6.23.0",
+    "typescript": "^6.0.3",
+    "wireit": "^0.14.13"
   }
 }
