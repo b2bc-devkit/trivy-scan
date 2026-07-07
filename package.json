@@ -1,0 +1,52 @@
+{
+  "name": "trivy-scan",
+  "version": "1.0.0",
+  "description": "Run Aqua Security's Trivy scanner via npx on Linux, macOS and Windows. Downloads the official binary on first use, verifies its SHA-256 checksum, caches it locally and forwards all arguments 1:1 - no Docker, no manual install.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "bin": {
+    "trivy-scan": "dist/src/bin/trivy-scan.js"
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test \"dist/test/unit/**/*.test.js\"",
+    "test:integration": "npm run build && node --test --test-timeout=600000 \"dist/test/integration/**/*.test.js\"",
+    "update-pinned": "npm run build && node dist/scripts/update-pinned.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b2bc-devkit/trivy-scan.git"
+  },
+  "keywords": [
+    "trivy",
+    "security",
+    "scanner",
+    "vulnerability",
+    "sbom",
+    "cve",
+    "docker",
+    "container",
+    "devsecops",
+    "cli",
+    "npx"
+  ],
+  "dependencies": {
+    "tar": "^7.5.19",
+    "unzipper": "^0.12.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/unzipper": "^0.10.11",
+    "typescript": "^6.0.3"
+  }
+}

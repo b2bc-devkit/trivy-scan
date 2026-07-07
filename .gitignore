@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test artifacts
+test/.download-cache/
+*.tgz
+
+# Logs and OS noise
+npm-debug.log*
+.DS_Store
