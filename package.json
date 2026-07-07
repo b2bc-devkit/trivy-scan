@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.json",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "prepare": "npm run build",
+    "prepublishOnly": "npm test",
     "test": "npm run build && node --test \"dist/test/unit/**/*.test.js\"",
     "test:integration": "npm run build && node --test --test-timeout=600000 \"dist/test/integration/**/*.test.js\"",
     "update-pinned": "npm run build && node dist/scripts/update-pinned.js"
@@ -26,6 +27,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/b2bc-devkit/trivy-scan.git"
+  },
+  "homepage": "https://github.com/b2bc-devkit/trivy-scan#readme",
+  "bugs": {
+    "url": "https://github.com/b2bc-devkit/trivy-scan/issues"
+  },
+  "author": "Marcin Uliasz <marcin.uliasz@pm.me> (https://github.com/b2bc-devkit)",
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "trivy",
