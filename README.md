@@ -3,7 +3,7 @@
 Run [Aqua Security's Trivy](https://github.com/aquasecurity/trivy) vulnerability scanner via `npx` on Linux, macOS and Windows — **no Docker, no Homebrew, no manual installation**.
 
 ```bash
-npx trivy-scan image python:3.9
+npx @b2bc-devkit/trivy-scan image python:3.9
 ```
 
 On first use the wrapper downloads the official Trivy binary for your OS/CPU from GitHub Releases, **verifies its SHA-256 checksum**, caches it in your user cache directory and runs it. Every subsequent run starts in milliseconds with zero network traffic and zero wrapper output.
@@ -14,20 +14,20 @@ On first use the wrapper downloads the official Trivy binary for your OS/CPU fro
 
 ```bash
 # Scan a container image
-npx trivy-scan image python:3.9
+npx @b2bc-devkit/trivy-scan image python:3.9
 
 # Scan the current directory, only HIGH/CRITICAL findings
-npx trivy-scan fs . --severity HIGH,CRITICAL
+npx @b2bc-devkit/trivy-scan fs . --severity HIGH,CRITICAL
 
 # Scan a remote git repository, JSON report to a file
-npx trivy-scan repo https://github.com/example/repo -f json > result.json
+npx @b2bc-devkit/trivy-scan repo https://github.com/example/repo -f json > result.json
 
 # Fail the build when vulnerabilities are found (exit code passes through 1:1)
-npx trivy-scan fs . --exit-code 1 --severity CRITICAL
+npx @b2bc-devkit/trivy-scan fs . --exit-code 1 --severity CRITICAL
 
 # IaC / secrets / licenses — any trivy subcommand works
-npx trivy-scan config ./terraform
-npx trivy-scan fs --scanners secret .
+npx @b2bc-devkit/trivy-scan config ./terraform
+npx @b2bc-devkit/trivy-scan fs --scanners secret .
 ```
 
 Colors, progress bars, interactive output, stdout/stderr separation and exit codes are preserved 1:1, so shell pipelines and CI gates behave exactly as with a native Trivy installation.
@@ -35,7 +35,7 @@ Colors, progress bars, interactive output, stdout/stderr separation and exit cod
 ## How it works
 
 ```
-npx trivy-scan <args>
+npx @b2bc-devkit/trivy-scan <args>
       │
       ▼
 1. Resolve platform     process.platform/arch → official artifact name
@@ -76,7 +76,7 @@ By default the wrapper tracks the **latest** stable Trivy release, checking at m
 
 ```bash
 # Reproducible CI runs, zero version-check traffic:
-TRIVY_SCAN_VERSION=pinned npx trivy-scan fs . --exit-code 1
+TRIVY_SCAN_VERSION=pinned npx @b2bc-devkit/trivy-scan fs . --exit-code 1
 ```
 
 ## Security model
@@ -118,7 +118,7 @@ jobs:
           path: ~/.cache/trivy-scan
           key: trivy-scan-${{ runner.os }}
       - name: Scan filesystem
-        run: npx --yes trivy-scan fs . --exit-code 1 --severity HIGH,CRITICAL
+        run: npx --yes @b2bc-devkit/trivy-scan fs . --exit-code 1 --severity HIGH,CRITICAL
         env:
           TRIVY_SCAN_VERSION: pinned   # deterministic runs
 ```
@@ -135,7 +135,7 @@ security-scan:
     key: trivy-scan
     paths: [.trivy-scan-cache]
   script:
-    - npx --yes trivy-scan fs . --exit-code 1 --severity HIGH,CRITICAL
+    - npx --yes @b2bc-devkit/trivy-scan fs . --exit-code 1 --severity HIGH,CRITICAL
 ```
 
 ## Exit codes
