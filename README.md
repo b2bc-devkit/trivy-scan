@@ -99,6 +99,25 @@ For maximum supply-chain rigor use `TRIVY_SCAN_VERSION=pinned` and pin this pack
 
 Each version lives in its own subdirectory (`v0.72.0/trivy`). Override the root with `TRIVY_SCAN_CACHE_DIR`; delete the directory at any time to force a fresh, re-verified download. (This cache holds the Trivy *binary* — Trivy's own vulnerability DB cache is managed by Trivy itself, see `trivy clean`.)
 
+## Vulnerability DB repository
+
+Trivy downloads its vulnerability DB and Java DB from OCI registries. Since Trivy ~0.56 the built-in default order pulls from `mirror.gcr.io` **first** — but that mirror returns `404` for the DB artifact in many environments, and Trivy only falls back to other registries on `429`/`5xx` (not on `404`), so a `404` is fatal. To keep `npx @b2bc-devkit/trivy-scan` working out of the box, the wrapper injects sensible defaults that skip `mirror.gcr.io` entirely:
+
+| Variable                   | Wrapper default                                                                |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `TRIVY_DB_REPOSITORY`      | `ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2`       |
+| `TRIVY_JAVA_DB_REPOSITORY` | `ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1` |
+
+GHCR is primary; AWS ECR Public is the fallback for `429`/`5xx`. Both are **overridable** — if you set either variable yourself (e.g. to point at an air-gapped mirror or a pull-through cache), the wrapper leaves it untouched. The values are comma-separated lists, matching Trivy's own convention.
+
+```bash
+# Use your own registry mirror:
+TRIVY_DB_REPOSITORY=registry.example.com/internal/trivy-db:2 \
+  npx @b2bc-devkit/trivy-scan fs . --exit-code 1
+```
+
+See the [Trivy DB docs](https://github.com/aquasecurity/trivy/blob/main/docs/guide/configuration/db.md) for the full list of official registries and air-gapped setup.
+
 ## CI/CD
 
 ### GitHub Actions

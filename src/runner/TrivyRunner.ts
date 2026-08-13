@@ -14,11 +14,34 @@ import { ProcessSpawnError } from '../errors/ProcessSpawnError.js';
  *    the ability to redirect stdout (e.g. `-f json > result.json`)
  *  - Trivy's exit code is propagated 1:1 (critical for `--exit-code` CI gates)
  *  - signal-caused deaths are re-raised so callers observe the same signal
+ *
+ * Vulnerability DB repository defaults: Trivy's built-in order pulls from
+ * `mirror.gcr.io` first, but that mirror returns 404 for the DB artifact in
+ * many environments (and Trivy only falls back to other registries on 429/5xx,
+ * NOT on 404 — so a 404 is fatal). To keep `npx @b2bc-devkit/trivy-scan`
+ * working out of the box, the wrapper injects sensible `TRIVY_DB_REPOSITORY`
+ * / `TRIVY_JAVA_DB_REPOSITORY` defaults pointing at GHCR (primary) and AWS ECR
+ * Public (fallback for 429/5xx). Both are overridable: if the caller already
+ * set either variable, the wrapper leaves it untouched.
+ *
+ * Refs:
+ *  - https://github.com/aquasecurity/trivy/blob/main/docs/guide/configuration/db.md
+ *  - https://github.com/aquasecurity/trivy/issues/7605 (fallback only on 429/5xx)
  */
 export class TrivyRunner {
+  /** Default vulnerability DB repositories (GHCR first, ECR Public fallback). */
+  public static readonly DEFAULT_DB_REPOSITORY =
+    'ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2';
+  /** Default Java DB repositories (GHCR first, ECR Public fallback). */
+  public static readonly DEFAULT_JAVA_DB_REPOSITORY =
+    'ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1';
+
   public run(binaryPath: string, args: readonly string[]): Promise<number> {
     return new Promise<number>((resolvePromise, rejectPromise) => {
-      const child = spawn(binaryPath, args, { stdio: 'inherit' });
+      const child = spawn(binaryPath, args, {
+        stdio: 'inherit',
+        env: TrivyRunner.childEnv(),
+      });
 
       // Ctrl+C: the terminal delivers SIGINT to the whole foreground process
       // group, so Trivy receives it directly. The wrapper just stays alive
@@ -65,5 +88,20 @@ export class TrivyRunner {
   private static conventionalExitCode(signal: NodeJS.Signals): number {
     const signalNumber = osConstants.signals[signal];
     return typeof signalNumber === 'number' ? 128 + signalNumber : 1;
+  }
+
+  /**
+   * Builds the child process environment, inheriting `process.env` and adding
+   * DB repository defaults only when the caller has not already set them.
+   */
+  private static childEnv(): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = { ...process.env };
+    if (!env['TRIVY_DB_REPOSITORY']) {
+      env['TRIVY_DB_REPOSITORY'] = TrivyRunner.DEFAULT_DB_REPOSITORY;
+    }
+    if (!env['TRIVY_JAVA_DB_REPOSITORY']) {
+      env['TRIVY_JAVA_DB_REPOSITORY'] = TrivyRunner.DEFAULT_JAVA_DB_REPOSITORY;
+    }
+    return env;
   }
 }
